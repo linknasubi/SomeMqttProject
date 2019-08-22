@@ -1,12 +1,11 @@
 import paho.mqtt.client as mqtt
 import time
-from flask import Flask, render_template
+from flask import Flask
+
 app = Flask("Pacote_Teste")
 import json
 
-
 #Servidor Flask que estará enviando o estado para o MQTT.
-
 
 @app.route('/<string:stat>/<string:mystring>:<int:Id>/<int:myint>')
 def combinedroute(stat, mystring, Id, myint):
@@ -16,27 +15,28 @@ def combinedroute(stat, mystring, Id, myint):
             clientes.append("cliente"+str(i))
             clientes[i] = mqtt.Client(str(i))
         return clientes
-    if stat == ("Chave" or "state" or "Voltage"):
+    if stat == "Chave" or stat == "state" or stat =="Voltage":
         if mystring == "Id":
             if myint==1:State = True
             else: State = False
-            with open("teste3.json", "r") as jsonFile:
+            with open("JsonFlask.json", "r") as jsonFile:
                 data = json.load(jsonFile)
             Reclosers = data["Recloser"]
             Reclosers[Id][stat] = State
-            with open("teste3.json", "w") as jsonFile:
+            with open("JsonFlask.json", "w") as jsonFile:
                 json.dump(data, jsonFile)
             Cliente = Generator(18)
             Cliente[Id].connect("127.0.0.1")
             Cliente[Id].loop_start()
-            Cliente[Id].publish("Changing_"+str(Id), str(stat)+"/"+str(myint))
+            Cliente[Id].publish("Changing", str(stat)+"/"+str(myint)+"/Client:" +str(Id))
             time.sleep(1)
-            Cliente[Id].loop_stop()  
-            
-            return "AAAAA"   
+            Cliente[Id].loop_stop()
+
+            return ("Client: " + str(Id) + " Changed " + str(stat) + " To:" + str(State))   
     else:
         return "Error"
 
 
 
 app.run(host = '127.0.0.1', port = '5000')
+
